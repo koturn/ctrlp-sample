@@ -13,15 +13,24 @@ let g:loaded_ctrlp_sample = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:ctrlp_builtins = ctrlp#getvar('g:ctrlp_builtins')
+
+function! s:get_sid_prefix() abort
+  return matchstr(expand('<sfile>'), '^function \zs<SNR>\d\+_\zeget_sid_prefix$')
+endfunction
+let s:sid_prefix = s:get_sid_prefix()
+delfunction s:get_sid_prefix
+
 let g:ctrlp_ext_var = add(get(g:, 'ctrlp_ext_vars', []), {
-      \ 'init': 'ctrlp#sample#init()',
-      \ 'accept': 'ctrlp#sample#accept',
+      \ 'init': s:sid_prefix . 'init()',
+      \ 'accept': s:sid_prefix . 'accept',
       \ 'lname': 'sample extension',
       \ 'sname': 'sample',
       \ 'type': 'path',
       \ 'nolim': 1
       \})
-let s:id = g:ctrlp_builtins + len(g:ctrlp_ext_vars)
+let s:id = s:ctrlp_builtins + len(g:ctrlp_ext_vars)
+unlet s:ctrlp_builtins s:sid_prefix
 
 
 function! ctrlp#sample#id() abort
@@ -29,11 +38,11 @@ function! ctrlp#sample#id() abort
 endfunction
 
 
-function! ctrlp#sample#init() abort
+function! s:init() abort
   return filter(split(globpath('.', '*', 1), "\n"), 'filereadable(v:val)')
 endfunction
 
-function! ctrlp#sample#accept(mode, str) abort
+function! s:accept(mode, str) abort
   call ctrlp#exit()
   echo len(readfile(a:str))
 endfunction
